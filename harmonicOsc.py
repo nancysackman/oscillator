@@ -5,17 +5,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 #variables
-m=60000.00
+m=600
 k=2
-ga=.05
+ga=2
 
-F0=1
+F0=30
 delta_t=.01
-omega=1.0
-time=np.arange(0.0,20.0,delta_t)
+omega=1
+time=np.arange(0.0,60.0,delta_t)
 
 #initial conditions
-y=np.array([0,1]) #[velocity, displacement]
+y=np.array([0,0]) #[velocity, displacement]
 
 A=np.array([[m,0],[0,1]])
 B=np.array([[ga,k],[-1,0]])
@@ -25,7 +25,11 @@ force=[]
 
 #time step solution
 for t in time:
-    F[0]=F0*np.cos(omega*t)
+    if t<=20:
+        F[0]=F0*np.cos(omega*t)
+    else:
+        F[0]=0.0
+
     y=y+delta_t*inv(A).dot(F-B.dot(y))
     Y.append(y[1])
     force.append(F[0])
