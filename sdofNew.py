@@ -5,6 +5,15 @@ matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt #added for crash
 import numpy as np
 import sys
+
+#for frequency domain
+import obspy
+from obspy import read
+from obspy.signal.tf_misfit import plot_tfr
+from obspy.clients.fdsn import Client
+from obspy import UTCDateTime
+from scipy.fftpack import fft
+
 #import numpy.fft as fft
 
 
