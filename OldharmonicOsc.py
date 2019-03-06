@@ -8,18 +8,14 @@ import csv #downloading csv for seismograph
 import requests #access files of IRIS webservices (eventually)
 import re #regular expression
 
-building_reader=csv.reader(open("/Users/nancysackman/Code/UW.HOLY.ENZ.2001test.csv"))
+#building_reader=csv.reader(open("/Users/nancysackman/Code/UW.HOLY.ENZ.2001.csv"))
 #from itertools import islice
 #next(islice(building_reader, 19, 19), None) #skips 19 rows of headers
-F0=[]
-#building forcing function from csv file
-for row in building_reader:
-    F0.append (row[1])
-
-    # col1_str=re.search('# .*', row[0])
-    # if col1_str:
-    #     col1=next(building_reader,None)
-    #     print(col1)
+#for row in building_reader:
+    #col1_str=re.search('# .*', row[0])
+    #if col1_str:
+        #col1=re.search('# .*', row[0])
+        #print(col1_str)
     # if col1==('#'):
     #     next(building_reader,None)
 
@@ -46,19 +42,20 @@ arr_out = []
 
 
 #variables
-m=2 #mass - kg
-k=8 #spring constant - units - kg/s^2
-fp=math.sqrt(k/m) # angular frequency - kg/(s^2*kg) - free period - hz - squareroot of k/m
+m=2 #mass - kg 2
+k=8 #spring constant - units - kg/s^2 8
+fp=math.sqrt(k/m) # real space - kg/(s^2*kg) - free period - hz - squareroot of k/m
 cdc=2*math.sqrt(k*m) #critical damping coefficient 2*squareroot of k*m
-ga=.05*cdc #damping - use 5% damping
-omega=fp #angular frequency, 2*pi/T=2*pi*f
+ga=cdc*.05 #damping - use 5% damping
+omega=fp #sinusoidal frequency, 2*pi/T=2*pi*f
+T=1/fp
+print(m,k,cdc,ga,fp,T)
 
-
-# F0=1 #forcing at time 0
-# F1=5 #forcing at time later
-delta_t=.01
+F0=7 #forcing at time 0
+F1=5 #forcing at time later
+delta_t=.001
 fon=10 #time in seconds to turn on forcing
-foff=fon+20  #time in seconds to turn off forcing, fon+30, or fon+ 10000 * delta_t
+foff=fon+1  #time in seconds to turn off forcing, fon+30, or fon+ 10000 * delta_t
 time=np.arange(0.0,60.0,delta_t)
 #om=np.arange(0,10*math.pi, math.pi/2)
 
@@ -70,12 +67,24 @@ B=np.array([[ga,k],[-1,0]])
 F=np.array([0.0,0.0])
 Y=[]
 force=[]
-t=0.0
+
 #time step solution
-for ForcingValue in F0:
-    t=t+delta_t
-    print(t)
-    #F[0]=ForcingValue*np.cos(omega*t)
+for t in time:
+    if t<=fon: #this is to turn on forcing - new code
+        F[0]=0.0
+    # if t<=20: this is Srividha's code
+    #     F[0]=F0*np.cos(omega*t) - Srividhya's code
+        #F[1]=F1*np.cos(omega*t) this is original code
+    #else:
+
+        #F[0]=F1*np.cos(omega*t)
+    else:
+        if t<=foff:
+            F[0] = F0 * np.cos(omega*t)
+        #F[0]=F1*np.cos(omega*t) also Srividha's code
+        #F[0]=0.0
+    if t>=foff:
+        F[0]=0.0
 
     y=y+delta_t*inv(A).dot(F-B.dot(y))
     Y.append(y[1])
@@ -86,8 +95,8 @@ for ForcingValue in F0:
     PE=0.5*k*y[1]**2
     energy=KE+PE
 
-    # if t % 1<=0.01:
-    #     print ('Total Energy:',KE+PE)
+    if t % 1<=0.01:
+        print ('Total Energy:',KE+PE)
 
 
 #plot results
