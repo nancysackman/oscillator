@@ -111,7 +111,7 @@ for row in building_reader:
 F0=np.array(F0)#making into numpy array
 arr_out = [] #array out
 
-#find frequency of accelerogram
+#find frequency of accelerogram - actually need frequency of displacement
 
 #data = np.array(F0)
 #spectrum = fft.fft(data)
