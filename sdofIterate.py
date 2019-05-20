@@ -126,10 +126,11 @@ plt.show()
 #print stuff
 
 print('absolute max acceleration',max((acceleration),key=abs))
-print('max acceleration occurs at',acceleration.index(max(acceleration))*delta_t,'seconds')
+print('max acceleration occurs at',acceleration.index(max((acceleration),key=abs))*delta_t,'seconds')
 print('maximum displacement in meters',max((Y),key=abs))
-#print('max displacement occurs at',Y.index(max(Y))*delta_t,key=abs,'seconds')#error positional argument
-#print('max displacement occurs at',key=abs,Y.index(max(Y))*delta_t,'seconds')
+print('max displacement occurs at',Y.index(max((Y),key=abs))*delta_t,'seconds')
+
+
 #Output files - loop following
 for s in range (1,31):
 
