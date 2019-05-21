@@ -61,7 +61,7 @@ arr_out = [] #array out
 
 #variables
 
-s=1 #number of stories
+s=6 #number of stories
 rp=s*0.1 #resonance period, 0.1*number of stories, free period
 g=9.81 #acceleration due to gravity
 m = 5410000*s/g #(TL/g)*s ,5410000, #mass, units kg for 6 story 50mx50m
@@ -134,7 +134,7 @@ print('max displacement occurs at',Y.index(max((Y),key=abs))*delta_t,'seconds')
 #Output files - loop following
 for s in range (1,31):
 
-    arrSDOF=[s,T,abs(max(Y)),acceleration.index(max(acceleration))*delta_t]
+    arrSDOF=[sta,chan,net,gain,s,m,NF,f,delta_t,T,max((acceleration),key=abs),abs(max(Y)),acceleration.index(max(acceleration))*delta_t,max((Y),key=abs),Y.index(max((Y),key=abs))*delta_t]
     with open('sdofResultspython.csv',mode='a') as csv_out:
         writer=csv.writer(csv_out)
         writer.writerow(arrSDOF)
