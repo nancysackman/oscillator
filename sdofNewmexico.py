@@ -22,31 +22,17 @@ import re #regular expression
 import webbrowser
 import requests
 
-#Here we add the import part with IRIS
+building_reader=csv.reader(open("/Users/nancysackman/Code/building/MI1520170919181440.csv"))
 
-url='https://service.iris.edu/irisws/timeseries/1/query?'
-sta="K215" #khz,pcdr TLIG
-chan="HNN" #hnn,hnn BHN
-net = "AK" #NZ,PR MX
-loc = "--" #20
-starttime = "2018-11-30T17:29:28"
-samplingtime = "2018-11-30T17:29:28" #start time of instrument recording
-duration = "100"
-format = "geocsv"
-params="sta=" + sta + "&cha=" + chan + "&net=" + net + "&loc=" + loc + "&start=" +starttime + "&dur=" + duration + "&format=" + format
-print(params)
-url+=params
-print(url)
-#params={'net':'IU&',/Users/nancysackman/Code/building/sdofIterate.py'sta':'ANMO&','loc':'00&','cha':'BHZ&','starttime':'2005-01-01T00:00:00&','endtime':'2005-01-02T00:00:00&','output':'plot'}
-
-r=requests.get(url=url)
-print(r)
-file = open("./test.csv", "w")
-file.write(r.text)
-file.close()
-building_reader=csv.reader(open("/Users/nancysackman/Code/building/test.csv"))
-
-#This part is to import the csv file and skip headers from the IRIS website
+#manually fill in from txt files
+sta="MI15" #khz,pcdr TLIG
+chan="S00E" #hnn,hnn BHN
+net = "UNAM" #NZ,PR MX
+starttime = "2017-09-19T18:14:40"
+samplingtime="2017-09-19T18:15:00" #start time of instrument recording
+depth="57"
+M="7.1"
+gain=0
 
 for header in building_reader: #skip header information until reached first row of meaningful data
     if (header[0]!="Time"):
@@ -59,59 +45,55 @@ for row in building_reader:
     F0.append(float(row[1]))
 F0=np.array(F0)#making into numpy array
 arr_out = [] #array out
-
-#This part had to be inserted to account for the gain of the accelerometer
-
-gain = 213947.0# 427336 KHZ,#523574.0 PCDR, #419102.0 sensitivity from IRIS page counts/m/s^2 - HOM, AK; 428155.0, HOLY, UW, K211 213947.0
-F0 = F0/gain #F=m*a,
-mean = np.mean(F0) #gets the mean for all F0(accelerogram)
-F0 = F0-mean #the mean is then subtracted after dividing gain
+F0=F0/100 #change to cm for Mexico
+arr_out = [] #array out
 
 #variables
 
-for s in range (1,2):
-    #s=1 #number of stories
+for s in range (1,2): #s is number of stories
+
     rp=s*0.1 #resonance period, 0.1*number of stories, free period
     g=9.81 #acceleration due to gravity
     m = 5410000*s/g #(TL/g)*s ,5410000, #mass, units kg for 6 story 50mx50m
-    k = 11700000 #spring constant
-    #Damping - We want a 5% damping ratio, .05=c/2*sqrt(m*k)
-    #CDE=np.sqrt((-c**2 + 4*m*k)/(2.0*m)) #sq((-c^2 + 4*m*k))2*m critical damping equation
-    NF = math.sqrt(k/m) #natural frequency, units Hz
-    T=(2*math.pi)/NF #1/NF, units seconds
-    f=1/T
-    delta_t = .005 #.005KHZ, #0.02HOM, AK; 0.01 HOLY, UW; .005 K223, AK
-    omega = NF*(2*math.pi)/T #units Hz, w=sqrt(k/m) or 2pi/T, rads/sec
+    k = 11700000 #spring constant,k=9.8MN/m which is 9800000, k=AE/L 11700000, k reinforced concrete 100000000
     CD = 2*math.sqrt(m*k) #critical damping
     c = .05*CD #actual damping, units kg/s
 
+    #Damping - We want a 5% damping ratio, .05=c/2*sqrt(m*k)
+    #CDE=np.sqrt((-c**2 + 4*m*k)/(2.0*m)) #sq((-c^2 + 4*m*k))2*m critical damping equation
+    #E=c/CD #ratio of damping coefficient to critical damping - Critical Damping Coefficient
+
+    NF = math.sqrt(k/m) #natural frequency, units Hz
+    T=(2*math.pi)/NF #1/NF, units seconds
+    f=1/T
+    delta_t = .01 #.005KHZ, #0.02HOM, AK; 0.01 HOLY, UW; .005 K223, AK
+    omega = NF*(2*math.pi)/T #units Hz, w=sqrt(k/m) or 2pi/T, rads/sec
+
+    #Now we come back to the oscillator program after variables have been selected
+
     #initial state
-    y=np.array([0,0]) #[velocity, Displacement] y is a vector
+    y=np.array([0,0]) #[velocity, Displacement] y is a
     A = np.array([[m,0],[0,1]]) #matrix, list of two lists, first row is m, second row is 0 and 1
     B = np.array([[c,k], [-1,0]]) #damping and spring constant
-    F = np.array([0.0, 0.0]) #force vector
+    F = np.array([0.0, 0.0]) #forcing vector
     Y = [] #for plotting
     force = []
     acceleration = []
 
-    #This part had to be inserted to account for the gain of the accelerometer
-    t=0.0
+    t=0.0 #genius! there is no lagtime
     time = []
-    #This part is to create the Displacement
 
     for ForcingValue in F0:
         time.append(t)
         t=t+delta_t
         F[0]=ForcingValue#*np.sin(omega*t) #need to verify that displacement is calculated this way or by another function
 
-        y = y+delta_t*inv(A).dot(F*m-B.dot(y)) #F=m*a, multiply-acceleration coming in, need to convert to force
+        y = y+delta_t*inv(A).dot(F*m-B.dot(y)) #F=m*a, since forcing function was acceleration, need to convert to force
         Y.append(y[1])
         #force.append(F[0])#
         acceleration.append(F[0])
         KE = 0.5*m*y[0]**2
         PE = 0.5*k*y[1]**2
-
-    #plot sdofResults
 
     t=[i for i in time]
     ax1=plt.subplot()
@@ -141,3 +123,14 @@ for s in range (1,2):
     with open('sdofResultspython.csv',mode='a') as csv_out:
         writer=csv.writer(csv_out)
         writer.writerow(arrSDOF)
+
+#The next part is going to look at building displacement based on the number of stories,
+#mass, spring constant, critical damping ratio.  We need to equate or figure out
+#the frequency of the acceleration or forcing function from the seismogramself.
+#To do this I have equated the masses from F=ma and omega = sqrt(k/m)=2pifself.
+#If I set the equations equal to each other based on m, then f=sqrt(F*k/4pi^2*a)
+
+#new code called frequency
+#a is acceleration from spectogram
+
+#f=sqrt(F*k/4*math.pi**2*a)
